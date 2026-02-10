@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+            const users = [
+            { id: 1, name: "Anna", age: 22, city: "Moscow", isActive: true },
+            { id: 2, name: "Oleg", age: 17, city: "Kazan", isActive: false },
+            { id: 3, name: "Ivan", age: 30, city: "Moscow", isActive: true },
+            { id: 4, name: "Maria", age: 25, city: "Sochi", isActive: false }
+            ];
+
+            function getActiveUsers(usersArray) {
+                return usersArray.filter(user => user.isActive);
+            }
+
+            const getUserNames = (usersArray) => {
+                return usersArray.map(user => user.name);
+            };
+
+            function findUserById(usersArray, id) {
+                return usersArray.find(user => user.id === id) || null;
+            }
+
+            function getUsersStatistics(usersArray) {
+                const activeUsers = usersArray.filter(user => user.isActive);
+                const inactiveUsers = usersArray.filter(user => !user.isActive);
+                
+                return {
+                    total: usersArray.length,
+                    active: activeUsers.length,
+                    inactive: inactiveUsers.length
+                };
+                }
+
+            function getAverageAge(usersArray) {
+                if (usersArray.length === 0) return 0;
+                
+                const totalAge = usersArray.reduce((sum, user) => sum + user.age, 0);
+                return totalAge / usersArray.length;
+            }
+
+            function groupUsersByCity(usersArray) {
+                return usersArray.reduce((result, user) => {
+                    const city = user.city;
+                    
+                    if (!result[city]) {
+                    result[city] = [];
+                    }
+                    
+                    result[city].push(user);
+                    return result;
+                }, {});
+            }
+
+            console.log("1. Активные пользователи:", getActiveUsers(users));
+            console.log("2. Имена пользователей:", getUserNames(users));
+            console.log("3.1. Поиск пользователя с id=1:", findUserById(users, 1));
+            console.log("3.2. Поиск пользователя с id=2:", findUserById(users, 2));
+            console.log("3.3. Поиск пользователя с id=3:", findUserById(users, 3));
+            console.log("3.4. Поиск пользователя с id=4:", findUserById(users, 4));
+            console.log("3.5. Поиск пользователя с id=5 (не существует):", findUserById(users, 5));
+            console.log("4. Статистика пользователей:", getUsersStatistics(users));
+            console.log("5. Средний возраст:", getAverageAge(users));
+            console.log("6. Группировка по городам:", groupUsersByCity(users));
+    </script>
+</body>
+</html>

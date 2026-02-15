@@ -7,66 +7,93 @@
 </head>
 <body>
     <script>
-            const users = [
-            { id: 1, name: "Anna", age: 22, city: "Moscow", isActive: true },
-            { id: 2, name: "Oleg", age: 17, city: "Kazan", isActive: false },
-            { id: 3, name: "Ivan", age: 30, city: "Moscow", isActive: true },
-            { id: 4, name: "Maria", age: 25, city: "Sochi", isActive: false }
-            ];
+        let expenses = [];
+        let nextId = 1;
 
-            function getActiveUsers(usersArray) {
-                return usersArray.filter(user => user.isActive);
+        const addExpense = (title, amount, category) => {
+            if (!title?.trim() || typeof amount !== 'number' || amount <= 0 || !category?.trim()) {
+                return console.log('❌ Ошибка: Некорректные данные');
             }
+            const expense = { id: nextId++, title: title.trim(), amount, category: category.trim() };
+            expenses.push(expense);
+            console.log(` Добавлено: ${expense.title} - ${expense.amount}₽ (${expense.category})`);
+            return expense;
+        };
 
-            const getUserNames = (usersArray) => {
-                return usersArray.map(user => user.name);
-            };
+        const printAllExpenses = () => {
+            console.log('все расходы');
+            expenses.length === 0 
+                ? console.log('Нет расходов')
+                : expenses.forEach(e => console.log(`${e.id}. ${e.title.padEnd(20)} ${e.amount}₽ ${e.category}`));
+        };
 
-            function findUserById(usersArray, id) {
-                return usersArray.find(user => user.id === id) || null;
-            }
+        const getTotalAmount = () => {
+            const total = expenses.reduce((s, e) => s + e.amount, 0);
+            console.log(`Всего: ${expenses.length} расходов, сумма: ${total}₽`);
+            return total;
+        };
 
-            function getUsersStatistics(usersArray) {
-                const activeUsers = usersArray.filter(user => user.isActive);
-                const inactiveUsers = usersArray.filter(user => !user.isActive);
-                
-                return {
-                    total: usersArray.length,
-                    active: activeUsers.length,
-                    inactive: inactiveUsers.length
-                };
-                }
+        const getExpensesByCategory = (category) => {
+            const filtered = expenses.filter(e => e.category.toLowerCase() === category?.toLowerCase());
+            const total = filtered.reduce((s, e) => s + e.amount, 0);
+            console.log(`\n${category}: ${filtered.length} расходов, ${total}₽`);
+            filtered.forEach(e => console.log(`   • ${e.title}: ${e.amount}₽`));
+            return filtered;
+        };
 
-            function getAverageAge(usersArray) {
-                if (usersArray.length === 0) return 0;
-                
-                const totalAge = usersArray.reduce((sum, user) => sum + user.age, 0);
-                return totalAge / usersArray.length;
-            }
+        const findExpenseByTitle = (search) => {
+            const found = expenses.find(e => e.title.toLowerCase().includes(search?.toLowerCase()));
+            if (!found) return console.log(`❌ "${search}" не найден`);
+            console.log(` Найден: ${found.title} - ${found.amount}₽`);
+            found.title += ` (поиск: ${search})`;
+            return found;
+        };
 
-            function groupUsersByCity(usersArray) {
-                return usersArray.reduce((result, user) => {
-                    const city = user.city;
-                    
-                    if (!result[city]) {
-                    result[city] = [];
-                    }
-                    
-                    result[city].push(user);
-                    return result;
+        const expenseTracker = {
+            expenses,
+            currentIndex: 0,
+            
+            next() {
+                if (!expenses.length) return console.log('❌ Нет расходов');
+                this.currentIndex = (this.currentIndex + 1) % expenses.length;
+                console.log(`👉 ${expenses[this.currentIndex].title}`);
+            },
+            
+            addExpense,
+            getTotalAmount,
+            getExpensesByCategory,
+            findExpenseByTitle,
+            
+            deleteExpenseById(id) {
+                const index = expenses.findIndex(e => e.id === id);
+                if (index === -1) return console.log(`❌ ID ${id} не найден`);
+                const deleted = expenses.splice(index, 1)[0];
+                console.log(` Удалено: ${deleted.title}`);
+                this.currentIndex = Math.min(this.currentIndex, expenses.length - 1) || 0;
+            },
+            
+            getCategoryStatistics() {
+                console.log('статискика');
+                const stats = expenses.reduce((acc, e) => {
+                    acc[e.category] = acc[e.category] || { count: 0, total: 0 };
+                    acc[e.category].count++;
+                    acc[e.category].total += e.amount;
+                    return acc;
                 }, {});
+                Object.entries(stats).forEach(([cat, { count, total }]) => 
+                    console.log(`${cat}: ${count} шт, ${total}₽, средний ${Math.round(total/count)}₽`));
             }
+        };
 
-            console.log("1. Активные пользователи:", getActiveUsers(users));
-            console.log("2. Имена пользователей:", getUserNames(users));
-            console.log("3.1. Поиск пользователя с id=1:", findUserById(users, 1));
-            console.log("3.2. Поиск пользователя с id=2:", findUserById(users, 2));
-            console.log("3.3. Поиск пользователя с id=3:", findUserById(users, 3));
-            console.log("3.4. Поиск пользователя с id=4:", findUserById(users, 4));
-            console.log("3.5. Поиск пользователя с id=5 (не существует):", findUserById(users, 5));
-            console.log("4. Статистика пользователей:", getUsersStatistics(users));
-            console.log("5. Средний возраст:", getAverageAge(users));
-            console.log("6. Группировка по городам:", groupUsersByCity(users));
+        addExpense('Обед', 350, 'Еда');
+        addExpense('Такси', 500, 'Транспорт');
+        addExpense('Кофе', 150, 'Еда');
+        printAllExpenses();
+        getTotalAmount();
+        getExpensesByCategory('Еда');
+        findExpenseByTitle('Кофе');
+        expenseTracker.deleteExpenseById(2);
+        expenseTracker.getCategoryStatistics();
     </script>
 </body>
 </html>

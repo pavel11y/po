@@ -1,208 +1,242 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>пр2</title>
+    <title>Трекер расходов</title>
 </head>
 <body>
     <script>
         let expenses = []
         let nextId = 1
 
-        function addExpense(title, amount, category) { 
-            if (title === "" || amount <= 0 || category === "" || isNaN(amount)) {
-                console.log("ошибка: неверные данные для расхода")
-                return
+        function addExpense(title, amount, category) {
+            if (!title || title === "") {
+                console.log("Ошибка: название не может быть пустым")
+                return false
+            }
+            if (amount <= 0 || isNaN(amount)) {
+                console.log("Ошибка: сумма должна быть положительным числом")
+                return false
+            }
+            if (!category || category === "") {
+                console.log("Ошибка: категория не может быть пустой")
+                return false
             }
             
-            let expense = {
-                id: nextId,
-                title: title,
-                amount: amount,
-                category: category
-            }
-            
-            expenses.push(expense)
-            nextId++
-            console.log("расход добавлен: " + title + " (" + amount + "руб)")
+            expenses.push({ id: nextId++, title, amount: Number(amount), category })
+            console.log(`Расход добавлен: "${title}" (${amount} руб.) в категории "${category}"`)
+            return true
         }
 
-        function printAllExpenses() { 
-            console.log("все расходы")
+        function printAllExpenses() {
+            console.log("Все раходы")
             if (expenses.length === 0) {
-                console.log("расходов нет")
+                console.log("Расходов нет")
                 return
             }
             
-            for (let i = 0; i < expenses.length; i++) {
-                let e = expenses[i]
-                console.log(e.id + " | " + e.title + " | " + e.amount + " руб | " + e.category)
-            }
+            console.log(" ID | Название | Сумма (руб) | Категория")
+            
+            expenses.forEach(e => {
+                console.log(` ${e.id.toString().padEnd(3)}| ${e.title.padEnd(28).substring(0, 28)}| ${e.amount.toString().padStart(9)} | ${e.category.padEnd(16)}`)
+            })
+            
+            let total = getTotalAmount(false)
+            console.log(`     ИТОГО:                         ${total.toString().padStart(9)} руб.`)
         }
 
-        function getTotalAmount() { 
-            let total = 0
-            for (let i = 0; i < expenses.length; i++) {
-                total = total + expenses[i].amount  
+        function getTotalAmount(showCheck = true) {
+            let total = expenses.reduce((sum, e) => sum + e.amount, 0)
+            if (showCheck) {
+                console.log("Чек")
+                console.log(`Всего потрачено: ${total} рублей`)
             }
-            
-            console.log("чек")
-            console.log("всего потрачено: " + total + " рублей")
             return total
         }
 
-        function getExpensesByCategory(category) { 
-            let result = []
-            let total = 0
+        function getExpensesByCategory(category) {
+            console.log(`Категория: "${category}"`)
+            let result = expenses.filter(e => e.category.toLowerCase() === category.toLowerCase())
             
-            console.log("категория: " + category)
-            
-            for (let i = 0; i < expenses.length; i++) {
-                if (expenses[i].category === category) {
-                    result.push(expenses[i])
-                    total = total + expenses[i].amount
-                    console.log("  • " + expenses[i].title + " - " + expenses[i].amount + " руб")
-                }
+            if (result.length === 0) {
+                console.log("Нет расходов в этой категории")
+                return []
             }
             
-            if (result.length > 0) {
-                console.log("  итого по категории: " + total + " руб")
-            } else {
-                console.log("  нет расходов в этой категории")
-            }
-            
+            result.forEach((e, i) => console.log(`  ${i+1}. "${e.title}" - ${e.amount} руб.`))
+            let total = result.reduce((sum, e) => sum + e.amount, 0)
+            console.log(`Итого по категории: ${total} руб. (${result.length} операций)`)
             return result
         }
 
-        function findExpenseByTitle(search) { 
-            if (search === "") {
-                console.log("ошибка: строка поиска пустая")
+        function findExpenseByTitle(search) {
+            console.log(`поиск: "${search}"`)
+            if (!search) {
+                console.log("Строка не может быть пустой")
                 return null
             }
             
-            for (let i = 0; i < expenses.length; i++) {
-                if (expenses[i].title.includes(search)) {
-                    let expense = expenses[i]
-                    
-                    console.log("найдено")
-                    console.log("  id: " + expense.id)
-                    console.log("  название: " + expense.title)
-                    console.log("  сумма: " + expense.amount + " руб")
-                    console.log("  категория: " + expense.category)
-                    return expense
-                }
+            let found = expenses.filter(e => e.title.toLowerCase().includes(search.toLowerCase()))
+            
+            if (found.length === 0) {
+                console.log(`Ничего не найдено по запросу:${search}`)
+                return false
             }
             
-            console.log("  ничего не найдено по запросу: \"" + search + "\"")
-            return null
+            found.forEach(e => {
+                console.log("Найдено:")
+                console.log(`  ID: ${e.id}\n  Название: "${e.title}"\n  Сумма: ${e.amount} руб.\n  Категория: ${e.category}`)
+            })
+            return true
+        }
+
+        function deleteExpenseById(id) {
+            console.log(`Удаление (ID: ${id})`)
+            let index = expenses.findIndex(e => e.id === id)
+            if (index === -1) {
+                console.log(`Расход с ID ${id} не найден`)
+                return
+            }
+            console.log(`Удалён расход: "${expenses[index].title}" (ID: ${id})`)
+            expenses.splice(index, 1)
+        }
+
+        function printCategoryStats() {
+            console.log("статистика по категориям")
+            if (expenses.length === 0) {
+                console.log("Нет данных для статистики")
+                return
+            }
+            
+            let categories = [...new Set(expenses.map(e => e.category))]
+            let grandTotal = 0
+            
+            categories.forEach(cat => {
+                let catExpenses = expenses.filter(e => e.category === cat)
+                let total = catExpenses.reduce((sum, e) => sum + e.amount, 0)
+                grandTotal += total
+                let max = catExpenses.reduce((max, e) => e.amount > max.amount ? e : max, catExpenses[0])
+                
+                console.log(`${cat}:`)
+                console.log(`     Операций: ${catExpenses.length}`)
+                console.log(`     Сумма: ${total} руб.`)
+                console.log(`     Средний чек: ${Math.round(total/catExpenses.length)} руб.`)
+                console.log(`     Самая дорогая: "${max.title}" (${max.amount} руб.)`)
+            })
+            
+            console.log("Общая статистика:")
+            console.log(`     Всего операций: ${expenses.length}`)
+            console.log(`     Всего потрачено: ${grandTotal} руб.`)
+            console.log(`     Средний расход: ${Math.round(grandTotal/expenses.length)} руб.`)
+        }
+
+        function nextExpense() {
+            console.log("Случайный расход")
+            if (expenses.length === 0) {
+                console.log("Нет расходов")
+                return
+            }
+            let e = expenses[Math.floor(Math.random() * expenses.length)]
+            console.log(`Текущий расход:\n  ID: ${e.id}\n  "${e.title}"\n  ${e.amount} руб. (${e.category})`)
         }
 
         let expenseTracker = {
-            expenses: expenses,
-            
-            addExpense: function(title, amount, category) {
-                addExpense(title, amount, category)
-            },
-            
-            getTotalAmount: function() {
-                return getTotalAmount()
-            },
-            
-            getExpensesByCategory: function(category) {
-                return getExpensesByCategory(category)
-            },
-            
-            findExpenseByTitle: function(search) {
-                return findExpenseByTitle(search)
-            },
-            
-            nextExpense: function() {
-                console.log("переключение")
-                if (expenses.length === 0) {
-                    console.log("  нет расходов")
-                    return
-                }
-                let randomIndex = Math.floor(Math.random() * expenses.length)
-                let e = expenses[randomIndex]
+            expenses, addExpense, getTotalAmount, getExpensesByCategory,
+            findExpenseByTitle, nextExpense, deleteExpenseById, printCategoryStats, printAllExpenses
+        }
 
-                console.log("  текущий: " + e.title + " (" + e.amount + " руб)")
-            },
-            
-            deleteExpenseById: function(id) {
-                let newExpenses = []
-                let found = false
-                
-                for (let i = 0; i < expenses.length; i++) {
-                    if (expenses[i].id === id) {
-                        console.log("  удален: " + expenses[i].title)
-                        found = true
-                    } else {
-                        newExpenses.push(expenses[i])
-                    }
-                }
-                
-                if (found) {
-                    expenses = newExpenses
-                    this.expenses = expenses
-                } else {
-                    console.log("  id " + id + " не найден")
-                }
-            },
-            
-            printCategoryStats: function() {
-                console.log("статистика по категориям")
-                
-                let categories = []
-                for (let i = 0; i < expenses.length; i++) {
-                    let category = expenses[i].category
-                    if (!categories.includes(category)) {
-                        categories.push(category)
-                    }
-                }
-                
-                if (categories.length === 0) {
-                    console.log("  нет данных")
-                    return
-                }
-                
-                for (let i = 0; i < categories.length; i++) {
-                    let cat = categories[i]
-                    let total = 0
-                    let count = 0
+        function getNumberFromPrompt(message) {
+            let value = prompt(message)
+            return value === null ? null : parseFloat(value)
+        }
+
+        function showNotificationMenu() {
+            return prompt(
+                "Персональный трекер расходов\n" +
+                `Всего расходов: ${expenses.length}\n\n` +
+                "1. Добавить новый расход\n" +
+                "2. Показать все расходы\n" +
+                "3. Показать общую сумму\n" +
+                "4. Поиск по категории\n" +
+                "5. Поиск по названию\n" +
+                "6. Случайный расход\n" +
+                "7. Удалить расход по ID\n" +
+                "8. Статистика по категориям\n" +
+                "0. Выход\n\n" +
+                "Введите номер действия (0-8):"
+            )
+        }
+
+        function handleUserChoice(choice) {
+            switch(choice) {
+                case "1": {
+                    let title = prompt("Введите название расхода:")
+                    if (!title) { console.log("Название не может быть пустым"); return true }
                     
-                    for (let j = 0; j < expenses.length; j++) {
-                        if (expenses[j].category === cat) {
-                            total = total + expenses[j].amount
-                            count++
-                        }
-                    }
+                    let amount = getNumberFromPrompt("Введите сумму расхода:")
+                    if (amount === null) return true
+                    if (isNaN(amount) || amount <= 0) { console.log("Число не может быть отрицательным"); return true }
                     
-                    console.log("  " + cat + ": " + count + " операций, " + total + " руб")
+                    let category = prompt("Введите категорию:")
+                    if (!category) { console.log("В этой категории нет товаров"); return true }
+                    
+                    addExpense(title, amount, category)
+                    break
                 }
+                case "2": printAllExpenses(); break
+                case "3": getTotalAmount(true); break
+                case "4": {
+                    let cat = prompt("Введите категорию для поиска:")
+                    if (cat) getExpensesByCategory(cat)
+                    break
+                }
+                case "5": {
+                    let search = prompt("Введите текст для поиска:")
+                    if (search) findExpenseByTitle(search)
+                    break
+                }
+                case "6": nextExpense(); break
+                case "7": {
+                    let id = getNumberFromPrompt("Введите ID расхода для удаления:")
+                    if (id !== null && !isNaN(id)) deleteExpenseById(id)
+                    break
+                }
+                case "8": printCategoryStats(); break
+                case "0":
+                    console.log("До свидания. Все записи сохранены в консоли.")
+                    return false
+                default: console.log("Введите число от 0 до 8.")
+            }
+            return true
+        }
+
+        function startApp() {
+            console.log("Запуск трекера расходов")
+            let isRunning = true
+            
+            while (isRunning) {
+                let choice = showNotificationMenu()
+                if (choice === null) {
+                    if (confirm("Выйти из программы?")) {
+                        console.log("Программа завершена. Записи сохранены.")
+                        isRunning = false
+                    }
+                    continue
+                }
+                isRunning = handleUserChoice(choice)
             }
         }
+
+        console.log("трекер расходов")
         
-        addExpense("Цезарь", 1500, "Еда")
-        addExpense("Автобус", 2300, "Транспорт")
-        addExpense("Кофе Латте", 4200, "Еда")
-        addExpense("Книга", 6400, "Развлечения")
-        
-        printAllExpenses()
-        getTotalAmount()
-        getExpensesByCategory("Еда")
-        findExpenseByTitle("Кофе")
-        
-        expenseTracker.nextExpense()
-        expenseTracker.nextExpense()
-        expenseTracker.printCategoryStats()
-        
-        console.log("удаление")
-        expenseTracker.deleteExpenseById(2) 
-        
-        printAllExpenses()
-        getTotalAmount()
+        if (prompt("Запустить трекер? (да/нет)")?.toLowerCase() === "да") {
+            startApp()
+        } else {
+            console.log("Программа выключена")
+        }
+
+        Object.assign(window, { addExpense, printAllExpenses, getTotalAmount, getExpensesByCategory, findExpenseByTitle, deleteExpenseById, printCategoryStats, nextExpense, expenseTracker })
     </script>
 </body>
 </html>
-

@@ -1,11 +1,6 @@
 void main() {
-  List<String> students = [
-    'Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов'
-  ];
-  
-  List<String> subjects = [
-    'Математика', 'Физика', 'Информатика', 'История', 'Литература'
-  ];
+  List<String> students = ['Иванов', 'Петров', 'Сидоров', 'Смирнов', 'Кузнецов', 'Попов'];
+  List<String> subjects = ['Математика', 'Физика', 'Информатика', 'История', 'Литература'];
   
   Map<String, Map<String, int>> grades = {
     'Иванов': {'Математика': 5, 'Физика': 4, 'Информатика': 5, 'История': 3, 'Литература': 4},
@@ -24,169 +19,168 @@ void main() {
     'Остальные (ср.балл < 3.5)': []
   };
 
-  Map<String, double> averageScores = {};
-
   for (var student in students) {
-    var studentGrades = grades[student]!.values;
-    double average = studentGrades.reduce((a, b) => a + b) / studentGrades.length;
-    averageScores[student] = average;
+    var g = grades[student]!.values;
+    double avg = g.reduce((a, b) => a + b) / g.length;
     
-    if (average >= 4.5) {
+    if (avg >= 4.5) {
       scores['Отличники (ср.балл ≥ 4.5)']!.add(student);
-    } 
-    else if (average >= 3.5) {
+    }
+    else if (avg >= 3.5) {
       scores['Хорошисты (3.5 ≤ ср.балл < 4.5)']!.add(student);
-    } 
+    }
     else {
       scores['Остальные (ср.балл < 3.5)']!.add(student);
     }
   }
 
-  scores.forEach((category, studentsList) {
-    print('  $category: ${studentsList.isEmpty ? 'нет' : studentsList.join(', ')}');
+  scores.forEach((cat, list) {
+    print('  $cat: ${list.isEmpty ? 'нет' : list.join(', ')}');
   });
   print('');
 
   print('Статистика оценок:');
   
-  Map<int, int> gradeCount = {2: 0, 3: 0, 4: 0, 5: 0};
+  Map<int, int> gradeCount = {};
   
-  for (var studentGrades in grades.values) {
-    for (var grade in studentGrades.values) {
-      gradeCount[grade] = gradeCount[grade]! + 1;
+  for (var g in grades.values) {
+    for (var grade in g.values) {
+      gradeCount[grade] = (gradeCount[grade] ?? 0) + 1;
     }
   }
   
-  gradeCount.forEach((grade, count) {
-    print('  Оценка $grade: $count раз(а)');
-  });
+  for (var grade in gradeCount.keys) {
+    print('  Оценка $grade: ${gradeCount[grade]} раз(а)');
+  }
   print('');
 
   print('Студенты получившие 5 по предметам:');
   
-  for (var subject in subjects) {
-    List<String> excellentStudents = [];
-    for (var student in students) {
-      if (grades[student]![subject] == 5) {
-        excellentStudents.add(student);
+  for (var sub in subjects) {
+    List<String> excellent = [];
+    
+    for (var s in students) {
+      if (grades[s]![sub] == 5) {
+        excellent.add(s);
       }
     }
-    print('  $subject: ${excellentStudents.isEmpty ? 'нет' : excellentStudents.join(', ')}');
+    print('  $sub: ${excellent.isEmpty ? 'нет' : excellent.join(', ')}');
   }
   print('');
 
   print('Предметы без двоек:');
   
-  List<String> subjectsWithoutTwos = [];
+  List<String> noTwos = [];
   
-  for (var subject in subjects) {
+  for (var sub in subjects) {
     bool hasTwo = false;
-    for (var student in students) {
-      if (grades[student]![subject] == 2) {
+    
+    for (var s in students) {
+      if (grades[s]![sub] == 2) {
         hasTwo = true;
-        break;
       }
     }
     if (!hasTwo) {
-      subjectsWithoutTwos.add(subject);
+      noTwos.add(sub);
     }
   }
-  
-  print('  ${subjectsWithoutTwos.isEmpty ? 'нет таких предметов' : subjectsWithoutTwos.join(', ')}');
+  print('  ${noTwos.isEmpty ? 'нет таких предметов' : noTwos.join(', ')}');
   print('');
 
   print('Предметы с наибольшим количеством двоек:');
   
-  Map<String, int> twosCount = {};
+  Map<String, int> twoCount = {};
   int maxTwos = 0;
-  List<String> subjectsWithMaxTwos = [];
+  List<String> worst = [];
   
-  for (var subject in subjects) {
+  for (var sub in subjects) {
     int count = 0;
-    for (var student in students) {
-      if (grades[student]![subject] == 2) {
+    
+    for (var s in students) {
+      if (grades[s]![sub] == 2) {
         count++;
       }
     }
-    twosCount[subject] = count;
+    twoCount[sub] = count;
     
     if (count > maxTwos) {
       maxTwos = count;
-      subjectsWithMaxTwos = [subject];
-    } else if (count == maxTwos && count > 0) {
-      subjectsWithMaxTwos.add(subject);
+      worst = [sub];
+    }
+    else if (count == maxTwos && count > 0) {
+      worst.add(sub);
     }
   }
   
   if (maxTwos == 0) {
     print('  Двоек нет ни по одному предмету');
-  } else {
-    print('  ${subjectsWithMaxTwos.join(', ')} — $maxTwos двоек');
+  }
+  else {
+    print('  ${worst.join(', ')} — $maxTwos двоек');
   }
   print('');
 
   print('Студенты с наибольшим количеством пятерок:');
   
-  Map<String, int> fivesCount = {};
+  Map<String, int> fiveCount = {};
   int maxFives = 0;
-  List<String> studentsWithMaxFives = [];
+  List<String> best = [];
   
-  for (var student in students) {
+  for (var s in students) {
     int count = 0;
-    for (var grade in grades[student]!.values) {
-      if (grade == 5) count++;
+    
+    for (var g in grades[s]!.values) {
+      if (g == 5) {
+        count++;
+      }
     }
-    fivesCount[student] = count;
+    fiveCount[s] = count;
     
     if (count > maxFives) {
       maxFives = count;
-      studentsWithMaxFives = [student];
-    } else if (count == maxFives && count > 0) {
-      studentsWithMaxFives.add(student);
+      best = [s];
+    }
+    else if (count == maxFives && count > 0) {
+      best.add(s);
     }
   }
   
   if (maxFives == 0) {
     print('  Пятерок нет ни у одного студента');
-  } else {
-    print('  ${studentsWithMaxFives.join(', ')} — $maxFives пятерок');
+  }
+  else {
+    print('  ${best.join(', ')} — $maxFives пятерок');
   }
   print('');
 
   print('Студенты с предметами, где оценка ниже 4:');
   
-  for (var student in students) {
-    List<String> lowGrades = [];
-    for (var entry in grades[student]!.entries) {
+  for (var s in students) {
+    List<String> low = [];
+    
+    for (var entry in grades[s]!.entries) {
       if (entry.value < 4) {
-        lowGrades.add('${entry.key} (${entry.value})');
+        low.add('${entry.key} (${entry.value})');
       }
     }
-    
-    if (lowGrades.isNotEmpty) {
-      print('  $student (${lowGrades.length} предмета): ${lowGrades.join(', ')}');
-    } else {
-      print('  $student: нет предметов с оценкой ниже 4');
+    if (low.isEmpty) {
+      print('  $s: нет предметов с оценкой ниже 4');
+    }
+    else {
+      print('  $s (${low.length} предмета): ${low.join(', ')}');
     }
   }
   print('');
 
   print('Пары «студент — предмет», по которым стоит 5:');
   
-  List<String> excellentPairs = [];
-  for (var student in students) {
-    for (var entry in grades[student]!.entries) {
-      if (entry.value == 5) {
-        excellentPairs.add('$student — ${entry.key}');
-      }
-    }
-  }
+  List<String> pairs = [];
   
-  if (excellentPairs.isEmpty) {
-    print('  Нет пар с оценкой 5');
-  } else {
-    for (var pair in excellentPairs) {
-      print('  $pair');
+  for (var s in students) {
+    for (var entry in grades[s]!.entries) {
+      if (entry.value == 5) {
+        pairs.add('$s — ${entry.key}');
+      }
     }
   }
 }

@@ -1,4 +1,4 @@
-import json
+import pickle
 from abc import ABC, abstractmethod
 
 class SystemUser(ABC):
@@ -90,6 +90,7 @@ class Library:
         book = Book(title, author)
         self._books.append(book)
         print(f"Книга '{title}' добавлена.")
+        self._save_data()
     
     def remove_book(self, title):
         for book in self._books:
@@ -99,6 +100,7 @@ class Library:
                     if title in user.get_borrowed_books():
                         user.return_book(title)
                 print(f"Книга '{title}' удалена.")
+                self._save_data()
                 return True
         print(f"Книга '{title}' не найдена.")
         return False
@@ -108,6 +110,7 @@ class Library:
             user = User(name)
             self._users.append(user)
             print(f"Пользователь '{name}' зарегистрирован.")
+            self._save_data()
             return user
         print(f"Пользователь '{name}' уже существует.")
         return None
@@ -152,6 +155,7 @@ class Library:
         book.set_is_available(False)
         user.borrow_book(book_title)
         print(f"Книга '{book_title}' выдана пользователю {user_name}.")
+        self._save_data()
         return True
     
     def return_book_from_user(self, user_name, book_title):
@@ -169,6 +173,7 @@ class Library:
         if user.return_book(book_title):
             book.set_is_available(True)
             print(f"Книга '{book_title}' возвращена.")
+            self._save_data()
             return True
         print(f"У пользователя {user_name} нет книги '{book_title}'.")
         return False
@@ -193,61 +198,68 @@ class Library:
     
     def _load_data(self):
         try:
-            with open("books.txt", "r", encoding="utf-8") as f:
-                books_data = json.load(f)
-                for book_data in books_data:
-                    book = Book(book_data["title"], book_data["author"], book_data["is_available"])
-                    self._books.append(book)
+            with open("library.pkl", "rb") as f:
+                data = pickle.load(f)
+                self._books = data.get("books", [])
+                self._users = data.get("users", [])
+        except FileNotFoundError:
+            pass
         except:
-            pass  
-        
-        try:
-            with open("users.txt", "r", encoding="utf-8") as f:
-                users_data = json.load(f)
-                for user_data in users_data:
-                    user = User(user_data["name"], user_data["borrowed_books"])
-                    self._users.append(user)
-        except:
-            pass  
+            pass
     
     def _save_data(self):
         try:
-            books_data = []
-            for book in self._books:
-                books_data.append({
-                    "title": book.get_title(),
-                    "author": book.get_author(),
-                    "is_available": book.get_is_available()
-                })
-            with open("books.txt", "w", encoding="utf-8") as f:
-                json.dump(books_data, f, ensure_ascii=False, indent=2)
-            
-            users_data = []
-            for user in self._users:
-                users_data.append({
-                    "name": user.get_name(),
-                    "borrowed_books": user.get_borrowed_books()
-                })
-            with open("users.txt", "w", encoding="utf-8") as f:
-                json.dump(users_data, f, ensure_ascii=False, indent=2)
+            data = {
+                "books": self._books,
+                "users": self._users
+            }
+            with open("library.pkl", "wb") as f:
+                pickle.dump(data, f)
         except:
             print("Ошибка сохранения.")
-            
+    
+    def read_pickle(self):
+        try:
+            with open("library.pkl", "rb") as f:
+                data = pickle.load(f)
+                books = data.get("books", [])
+                users = data.get("users", [])
+                
+                print(f"Книги ({len(books)}):")
+                if books:
+                    for i, book in enumerate(books, 1):
+                        print(f"  {i}. {book}")
+                else:
+                    print("  Нет книг")
+                
+                print(f"Пользователи ({len(users)}):")
+                if users:
+                    for i, user in enumerate(users, 1):
+                        borrowed = user.get_borrowed_books()
+                        books_str = ", ".join(borrowed) if borrowed else "нет книг"
+                        print(f"  {i}. {user.get_name()} (взято книг: {len(borrowed)}) - [{books_str}]")
+                else:
+                    print("  Нет пользователей")
+        except FileNotFoundError:
+            print("Файл library.pkl не найден.")
+        except Exception as e:
+            print(f"Ошибка при чтении файла: {e}")
+
 library = Library()
 
 while True:
-    print("1. Библиотекарь")
+    print("\n1. Библиотекарь")
     print("2. Пользователь")
-    print("3. Выход")
+    print("3. Показать все данные из файла")
+    print("4. Выход")
     
     choice = input("Выберите роль: ").strip()
     
     if choice == "1":
         name = input("Имя библиотекаря: ").strip()
         if library.login(name, "librarian"):
-            # Меню библиотекаря
             while True:
-                print(f"Бибилиотекарь: {name}")
+                print(f"\nБибилиотекарь: {name}")
                 for i, option in enumerate(library.get_current_user().get_menu_options(), 1):
                     print(f"{i}. {option}")
                 
@@ -301,7 +313,7 @@ while True:
         name = input("Имя пользователя: ").strip()
         if library.login(name, "user"):
             while True:
-                print(f"ПОЛЬЗОВАТЕЛЬ: {name}")
+                print(f"\nПользователь: {name}")
                 for i, option in enumerate(library.get_current_user().get_menu_options(), 1):
                     print(f"{i}. {option}")
                 
@@ -310,7 +322,7 @@ while True:
                 if action == "1":
                     books = library.get_available_books()
                     if books:
-                        print("Доступные книги:")
+                        print("\nДоступные книги:")
                         for book in books:
                             print(f"- '{book.get_title()}' - {book.get_author()}")
                     else:
@@ -346,6 +358,9 @@ while True:
             print("Пользователь не найден.")
     
     elif choice == "3":
+        library.read_pickle()
+    
+    elif choice == "4":
         library._save_data()
         print("Выход из системы.")
         break

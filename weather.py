@@ -1,65 +1,79 @@
 import requests
-
-def get_weather(city_name, api_key):
-    try:
-        geo_url = 'http://api.openweathermap.org/geo/1.0/direct'
-        geo_params = {
-            'q': city_name,
-            'appid': api_key,
-            'limit': 1
-        }
-        geo_response = requests.get(geo_url, params=geo_params, timeout=5)
-        
-        if geo_response.status_code == 401:
-            return {'error': 'Неверный API ключ'}
-        
-        if geo_response.status_code != 200 or not geo_response.json():
-            return {'error': 'Город не найден'}
-        
-        geo_data = geo_response.json()[0]
-        lat, lon = geo_data['lat'], geo_data['lon']
-        
-        weather_url = 'https://api.openweathermap.org/data/2.5/weather'
-        weather_params = {
-            'lat': lat,
-            'lon': lon,
-            'appid': api_key,
-            'units': 'metric',
-            'lang': 'ru'
-        }
-        weather_response = requests.get(weather_url, params=weather_params, timeout=5)
-        
-        if weather_response.status_code == 401:
-            return {'error': 'Неверный API ключ'}
-        
-        if weather_response.status_code != 200:
-            return {'error': 'Ошибка получения погоды'}
-        
-        data = weather_response.json()
-        
-        return {
-            'город': city_name,
-            'температура': data['main']['temp'],
-            'описание': data['weather'][0]['description'],
-            'влажность': data['main']['humidity'],
-            'ветер': data['wind']['speed']
-        }
-        
-    except requests.Timeout:
-        return {'error': 'Таймаут 5 секунд'}
-    except Exception:
-        return {'error': 'Ошибка при запросе'}
+import sys
 
 API_KEY = 'cbcf80c6e01e6c2996e8ff4205775e14'
-city = input("Введите название города: ")
+BASE_URL = 'https://api.openweathermap.org/data/2.5/weather'
 
-result = get_weather(city, API_KEY)
+def get_weather(city):
+    params = {
+        'q': city,
+        'appid': API_KEY,
+        'units': 'metric',
+        'lang': 'ru'
+    }
+    
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=5)
+        
+        if response.status_code == 200:
+            data = response.json()
+            
+            weather_info = {
+                'город': data['name'],
+                'температура': f"{data['main']['temp']:.1f}°C",
+                'ощущается_как': f"{data['main']['feels_like']:.1f}°C",
+                'описание': data['weather'][0]['description'].capitalize(),
+                'влажность': f"{data['main']['humidity']}%",
+                'ветер': f"{data['wind']['speed']} м/с"
+            }
+            
+            if 'deg' in data['wind']:
+                weather_info['направление_ветра'] = f"{data['wind']['deg']}°"
+            
+            return weather_info
+            
+        elif response.status_code == 401:
+            print("Ошибка 401: Неверный API-ключ")
+            return None
+            
+        elif response.status_code == 404:
+            print(f"Ошибка 404: Город '{city}' не найден")
+            return None
+            
+        else:
+            print(f"Ошибка {response.status_code}: {response.json().get('message', 'Неизвестная ошибка')}")
+            return None
+            
+    except requests.exceptions.Timeout:
+        print("Ошибка: Превышен таймаут ожидания (5 секунд)")
+        return None
+        
+    except requests.exceptions.ConnectionError:
+        print("Ошибка: Не удалось подключиться к серверу")
+        return None
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Ошибка при выполнении запроса: {e}")
+        return None
 
-if 'error' in result:
-    print(result['error'])
+if len(sys.argv) > 1:
+    city = ' '.join(sys.argv[1:])
+    print(f"Запрос погоды для города: {city}\n")
 else:
-    print(f"Город: {result['город']}")
-    print(f"Температура: {result['температура']}°C")
-    print(f"Описание: {result['описание']}")
-    print(f"Влажность: {result['влажность']}%")
-    print(f"Ветер: {result['ветер']} м/с")
+    city = input("Введите название города: ").strip()
+    if not city:
+        print("Название города не может быть пустым")
+        sys.exit(1)
+
+weather = get_weather(city)
+
+if weather:
+    print(f"Погода в городе: {weather['город']}")
+    print(f"Температура: {weather['температура']} (ощущается как {weather['ощущается_как']})")
+    print(f"Описание: {weather['описание']}")
+    print(f"Влажность: {weather['влажность']}")
+    print(f"Ветер: {weather['ветер']}")
+    if 'направление_ветра' in weather:
+        print(f"Направление ветра: {weather['направление_ветра']}")
+else:
+    print("\nНе удалось получить данные о погоде")

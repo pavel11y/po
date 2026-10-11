@@ -1,0 +1,20 @@
+{
+  "name": "lunar-estates-backend",
+  "version": "1.0.0",
+  "description": "Серверная часть магазина по продаже земельных участков на Луне",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.3",
+    "nodemailer": "^10.1.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

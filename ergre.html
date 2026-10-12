@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Игровой инфопузырь | Лайки = больше похожих игр</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: radial-gradient(circle at 20% 30%, #0a0f1a, #010101);
+            font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+            padding: 20px;
+            color: #f0f3ff;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #facc15, #3b82f6, #ec489a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .header p {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+
+        .panel {
+            background: rgba(10, 20, 35, 0.8);
+            backdrop-filter: blur(14px);
+            border-radius: 1.5rem;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #2d3a60;
+        }
+
+        .panel-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+            border-left: 3px solid #facc15;
+            padding-left: 10px;
+        }
+
+        .genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .genre-btn {
+            background: #1e293b;
+            border: 1px solid #475569;
+            padding: 5px 14px;
+            border-radius: 60px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #cbd5f0;
+        }
+
+        .genre-btn.active {
+            background: #3b82f6;
+            border-color: #a5b4fc;
+            color: white;
+            box-shadow: 0 0 8px #3b82f6;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        button {
+            background: #2d3a60;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 60px;
+            font-weight: 500;
+            color: #f1f5f9;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: 0.2s;
+        }
+
+        button.primary { background: #2563eb; }
+        button.warning { background: #f97316; }
+        button.danger { background: #dc2626; }
+        button.success { background: #10b981; }
+        button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+
+        .stats {
+            background: rgba(2, 8, 22, 0.7);
+            backdrop-filter: blur(10px);
+            border-radius: 1.2rem;
+            padding: 10px 16px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #334155;
+        }
+
+        .stat {
+            background: #00000066;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-family: monospace;
+        }
+
+        .fav-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .fav-badge {
+            background: #facc1522;
+            border: 1px solid #facc15;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            color: #facc15;
+        }
+
+        .feed {
+            background: rgba(2, 8, 22, 0.6);
+            backdrop-filter: blur(8px);
+            border-radius: 1.5rem;
+            border: 1px solid #334155;
+            overflow: hidden;
+        }
+
+        .feed-header {
+            padding: 12px 16px;
+            background: #0f172ae6;
+            border-bottom: 1px solid #2d3a5e;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            padding: 14px;
+            max-height: 560px;
+            overflow-y: auto;
+        }
+
+        .game-card {
+            background: rgba(15, 25, 45, 0.92);
+            border-radius: 1rem;
+            padding: 12px;
+            transition: 0.1s;
+        }
+
+        .game-card:hover {
+            transform: translateX(2px);
+            background: rgba(25, 40, 70, 0.96);
+        }
+
+        .game-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .game-genre {
+            font-size: 0.6rem;
+            background: #000000aa;
+            padding: 2px 8px;
+            border-radius: 40px;
+            display: inline-block;
+            margin: 4px 0;
+        }
+
+        .game-desc {
+            font-size: 0.65rem;
+            color: #cbd5f0;
+            margin: 6px 0;
+            line-height: 1.4;
+        }
+
+        .game-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+        }
+
+        .like-btn {
+            background: none;
+            border: 1px solid #5b6e9c;
+            padding: 3px 12px;
+            border-radius: 40px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            background: #0f172a;
+            cursor: pointer;
+            color: #cbd5f0;
+        }
+
+        .like-btn.liked {
+            background: #e11d48;
+            border-color: #fda4af;
+            color: white;
+        }
+
+        .tag {
+            font-size: 0.55rem;
+            padding: 2px 8px;
+            border-radius: 30px;
+            background: #00000066;
+        }
+
+        .info-box {
+            background: rgba(10, 20, 35, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 1rem;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            border-left: 3px solid #facc15;
+        }
+
+        .info-box strong {
+            color: #facc15;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        
+        .like-counter {
+            font-size: 0.55rem;
+            color: #facc15;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>Игровой инфопузырь</h1>
+        <p>Лайкай игры → жанр поднимается в ленте | Радикализация усиливает эффект</p>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">Фильтр по жанрам</div>
+        <div class="genres" id="genresContainer"></div>
+        <div class="actions">
+            <button id="randomEventBtn" class="warning">Внезапный хит</button>
+            <button id="breakBubbleBtn" class="success">Разрушить пузырь</button>
+            <button id="radicalModeBtn" class="danger">Радикализация</button>
+            <button id="resetBtn">Сброс лайков</button>
+        </div>
+    </div>
+
+    <div class="stats">
+        <div class="stat" id="totalStat">Игр: 0</div>
+        <div class="stat" id="bubbleStat">Доля: 0%</div>
+        <div class="stat" id="radicalStat">Режим: норма</div>
+        <div class="stat" id="likesStat">Лайков: 0</div>
+        <div class="fav-list" id="favList"></div>
+    </div>
+
+    <div class="feed">
+        <div class="feed-header">
+            <span>Лента рекомендаций</span>
+            <span id="visibleCount">показано: 0</span>
+        </div>
+        <div class="games-grid" id="feedList">
+            <div style="text-align:center; padding: 50px;">Загрузка...</div>
+        </div>
+    </div>
+
+    <div class="info-box">
+        <strong>Как работает пузырь</strong><br>
+        • Обычный режим: любимый жанр занимает 65% ленты (6-7 из 10 записей)<br>
+        • Режим радикализации: любимый жанр занимает 85% ленты (8-9 из 10)<br>
+        • <strong>Зачем радикализация?</strong> Показать, как алгоритмы соцсетей могут замыкать вас в эхо-камере.<br>
+        • Кнопка "Внезапный хит" временно разрушает пузырь и перемешивает ленту.
+    </div>
+</div>
+
+<script>
+    // Жанры и игры
+    const GENRES = ["RPG", "Шутер", "Инди", "Стратегия", "Приключения", "Хоррор", "Симулятор", "Гонки"];
+    
+    const GAMES_BY_GENRE = {
+        "RPG": ["Elden Ring", "Baldur's Gate 3", "The Witcher 3", "Cyberpunk 2077", "Diablo IV", "Skyrim", "Fallout 4", "Dark Souls III", "Mass Effect", "Dragon Age", "Starfield", "Path of Exile"],
+        "Шутер": ["Counter-Strike 2", "Valorant", "Rainbow Six Siege", "Call of Duty", "Overwatch 2", "Apex Legends", "Battlefield", "Destiny 2", "DOOM Eternal", "Titanfall 2", "Borderlands 3", "Far Cry 6"],
+        "Инди": ["Hollow Knight", "Stardew Valley", "Hades", "Celeste", "Undertale", "Dead Cells", "Disco Elysium", "Outer Wilds", "Cuphead", "Ori", "Slay the Spire", "Firewatch"],
+        "Стратегия": ["StarCraft II", "Age of Empires IV", "Civilization VI", "Total War", "Company of Heroes 3", "Crusader Kings III", "Europa Universalis IV", "RimWorld", "Factorio", "Frostpunk", "Anno 1800"],
+        "Приключения": ["The Last of Us", "God of War", "Uncharted 4", "Horizon", "Red Dead Redemption 2", "Ghost of Tsushima", "Spider-Man", "Jedi Survivor", "Stray", "Tomb Raider"],
+        "Хоррор": ["Resident Evil 4", "Amnesia", "Outlast 2", "Silent Hill 2", "Dead Space", "Alien Isolation", "The Evil Within", "Little Nightmares", "SOMA", "MADiSON"],
+        "Симулятор": ["Microsoft Flight Sim", "Minecraft", "Farming Simulator", "Euro Truck Sim 2", "Cities Skylines", "Kerbal Space", "PowerWash Simulator", "House Flipper", "Goat Simulator"],
+        "Гонки": ["Forza Horizon 5", "Gran Turismo 7", "Need for Speed", "F1 23", "DiRT Rally", "Wreckfest", "The Crew", "Assetto Corsa", "Trackmania"]
+    };
+    
+    // Сбор всех игр
+    let ALL_GAMES = [];
+    for (const [genre, titles] of Object.entries(GAMES_BY_GENRE)) {
+        for (const title of titles) {
+            ALL_GAMES.push({
+                title: title,
+                genre: genre,
+                desc: `Популярная игра в жанре ${genre.toLowerCase()}. Рекомендовано к прохождению.`
+            });
+        }
+    }
+    
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+    
+    ALL_GAMES = shuffleArray(ALL_GAMES);
+    
+    // Профиль пользователя
+    class GamerProfile {
+        constructor() {
+            this.selectedGenre = null;
+            this.genreLikes = new Map();
+            this.likedTitles = new Set();
+            this.radicalMode = false;
+            this.feedGames = [];
+            this.favoriteGenre = null;
+        }
+        
+        getTotalLikes() {
+            let total = 0;
+            for (let count of this.genreLikes.values()) total += count;
+            return total;
+        }
+        
+        updateFavorite() {
+            let max = 0;
+            let fav = null;
+            for (let [genre, count] of this.genreLikes.entries()) {
+                if (count > max) {
+                    max = count;
+                    fav = genre;
+                }
+            }
+            this.favoriteGenre = fav;
+            return fav;
+        }
+        
+        getTargetPercent() {
+            return this.radicalMode ? 85 : 65;
+        }
+        
+        likeGame(game) {
+            if (this.likedTitles.has(game.title)) return false;
+            this.likedTitles.add(game.title);
+            const current = this.genreLikes.get(game.genre) || 0;
+            this.genreLikes.set(game.genre, current + 1);
+            this.updateFavorite();
+            this.generateFeed();
+            return true;
+        }
+        
+        generateFeed() {
+            let pool = ALL_GAMES;
+            if (this.selectedGenre) {
+                pool = ALL_GAMES.filter(g => g.genre === this.selectedGenre);
+                this.feedGames = shuffleArray([...pool]);
+                return;
+            }
+            
+            this.updateFavorite();
+            const target = this.getTargetPercent();
+            
+            if (!this.favoriteGenre || this.getTotalLikes() === 0) {
+                this.feedGames = shuffleArray([...pool]);
+                return;
+            }
+            
+            const favGames = pool.filter(g => g.genre === this.favoriteGenre);
+            const otherGames = pool.filter(g => g.genre !== this.favoriteGenre);
+            
+            const feedSize = Math.min(60, pool.length);
+            const favNeeded = Math.floor(feedSize * target / 100);
+            const otherNeeded = feedSize - favNeeded;
+            
+            const shuffledFav = shuffleArray([...favGames]);
+            const shuffledOther = shuffleArray([...otherGames]);
+            
+            const selectedFav = shuffledFav.slice(0, Math.min(favNeeded, shuffledFav.length));
+            const selectedOther = shuffledOther.slice(0, otherNeeded);
+            
+            let combined = [...selectedFav, ...selectedOther];
+            combined = shuffleArray(combined);
+            this.feedGames = combined;
+        }
+        
+        breakBubble() {
+            this.genreLikes.clear();
+            this.likedTitles.clear();
+            this.radicalMode = false;
+            this.favoriteGenre = null;
+            this.generateFeed();
+        }
+        
+        setGenre(genre) {
+            this.selectedGenre = genre;
+            this.generateFeed();
+        }
+        
+        reset() {
+            this.genreLikes.clear();
+            this.likedTitles.clear();
+            this.radicalMode = false;
+            this.favoriteGenre = null;
+            this.generateFeed();
+        }
+        
+        getTopGenres() {
+            return Array.from(this.genreLikes.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
+        }
+    }
+    
+    let player = new GamerProfile();
+    let currentGenre = null;
+    
+    function renderFeed() {
+        const container = document.getElementById("feedList");
+        if (!container) return;
+        if (!player.feedGames.length) player.generateFeed();
+        
+        container.innerHTML = "";
+        player.feedGames.forEach(game => {
+            const card = document.createElement("div");
+            card.className = "game-card";
+            const isLiked = player.likedTitles.has(game.title);
+            const likeCount = player.genreLikes.get(game.genre) || 0;
+            const isFavorite = (player.favoriteGenre === game.genre && likeCount > 0);
+            
+            card.innerHTML = `
+                <div class="game-title">
+                    <span>${escapeHtml(game.title)}</span>
+                    ${likeCount > 0 ? `<span class="like-counter">+${likeCount}</span>` : ''}
+                </div>
+                <div class="game-genre">${game.genre}</div>
+                <div class="game-desc">${escapeHtml(game.desc)}</div>
+                <div class="game-footer">
+                    <button class="like-btn ${isLiked ? 'liked' : ''}" data-title="${escapeHtml(game.title)}">
+                        ${isLiked ? 'Лайкнут' : 'Лайкнуть'}
+                    </button>
+                    <span class="tag">${isFavorite ? 'любимый жанр' : 'все жанры'}</span>
+                </div>
+            `;
+            
+            const btn = card.querySelector(".like-btn");
+            btn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (!isLiked) {
+                    player.likeGame(game);
+                    renderStats();
+                    renderFeed();
+                }
+            });
+            container.appendChild(card);
+        });
+        
+        document.getElementById("visibleCount").innerHTML = `показано: ${player.feedGames.length}`;
+        document.getElementById("totalStat").innerHTML = `Игр: ${ALL_GAMES.length}`;
+    }
+    
+    function renderStats() {
+        const target = player.getTargetPercent();
+        document.getElementById("bubbleStat").innerHTML = `Доля: ${target}%`;
+        document.getElementById("radicalStat").innerHTML = player.radicalMode ? "Режим: радикал" : "Режим: норма";
+        document.getElementById("likesStat").innerHTML = `Лайков: ${player.getTotalLikes()}`;
+        
+        const favContainer = document.getElementById("favList");
+        const topGenres = player.getTopGenres();
+        if (topGenres.length > 0) {
+            favContainer.innerHTML = topGenres.map(([g, c]) => `<span class="fav-badge">${g} x${c}</span>`).join('');
+            if (player.favoriteGenre) {
+                favContainer.innerHTML += `<span class="fav-badge" style="background:#f9731640; border-color:#f97316;">доля: ${target}%</span>`;
+            }
+        } else {
+            favContainer.innerHTML = '<span style="font-size:0.65rem;">лайкни игру → жанр в топе</span>';
+        }
+    }
+    
+    function randomEvent() {
+        const randomGame = ALL_GAMES[Math.floor(Math.random() * ALL_GAMES.length)];
+        const fakeGame = {
+            title: `[ХИТ] ${randomGame.title}`,
+            genre: randomGame.genre,
+            desc: `НЕОЖИДАННЫЙ РЕЛИЗ! ${randomGame.desc} Событие временно разрушает пузырь.`
+        };
+        player.feedGames.unshift(fakeGame);
+        if (player.feedGames.length > 65) player.feedGames.pop();
+        
+        for (let [genre, count] of player.genreLikes.entries()) {
+            if (count > 0) player.genreLikes.set(genre, Math.max(1, Math.floor(count * 0.7)));
+        }
+        player.updateFavorite();
+        renderFeed();
+        renderStats();
+        setTimeout(() => {
+            player.generateFeed();
+            renderFeed();
+            renderStats();
+        }, 2000);
+    }
+    
+    function breakBubble() {
+        player.breakBubble();
+        renderStats();
+        renderFeed();
+    }
+    
+    function toggleRadical() {
+        player.radicalMode = !player.radicalMode;
+        player.generateFeed();
+        renderStats();
+        renderFeed();
+    }
+    
+    function resetAll() {
+        player.reset();
+        if (currentGenre) {
+            currentGenre = null;
+            player.selectedGenre = null;
+            document.querySelectorAll(".genre-btn").forEach(btn => btn.classList.remove("active"));
+            const allBtn = document.querySelector(".genre-btn.all-btn");
+            if (allBtn) allBtn.classList.add("active");
+        }
+        renderStats();
+        renderFeed();
+    }
+    
+    function setupGenres() {
+        const container = document.getElementById("genresContainer");
+        container.innerHTML = "";
+        
+        const allBtn = document.createElement("div");
+        allBtn.className = "genre-btn all-btn";
+        allBtn.textContent = "Все жанры";
+        allBtn.style.background = "#3b82f6";
+        allBtn.style.color = "white";
+        allBtn.addEventListener("click", () => {
+            document.querySelectorAll(".genre-btn").forEach(b => b.classList.remove("active"));
+            allBtn.classList.add("active");
+            currentGenre = null;
+            player.selectedGenre = null;
+            player.generateFeed();
+            renderFeed();
+            renderStats();
+        });
+        container.appendChild(allBtn);
+        allBtn.classList.add("active");
+        
+        GENRES.forEach(genre => {
+            const btn = document.createElement("div");
+            btn.className = "genre-btn";
+            btn.textContent = genre;
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".genre-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                currentGenre = genre;
+                player.setGenre(genre);
+                renderFeed();
+                renderStats();
+            });
+            container.appendChild(btn);
+        });
+    }
+    
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    window.addEventListener("DOMContentLoaded", () => {
+        setupGenres();
+        player.generateFeed();
+        renderFeed();
+        renderStats();
+        
+        document.getElementById("randomEventBtn").addEventListener("click", randomEvent);
+        document.getElementById("breakBubbleBtn").addEventListener("click", breakBubble);
+        document.getElementById("radicalModeBtn").addEventListener("click", toggleRadical);
+        document.getElementById("resetBtn").addEventListener("click", resetAll);
+    });
+</script>
+</body>
+</html>

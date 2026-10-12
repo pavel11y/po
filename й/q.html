@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Планировщик задач - Тёмная тема</title>
+    <link rel="stylesheet" href="q.css">
+</head>
+<body>
+<div class="containerq">
+    <header class="header">
+        <h1>📋 Планировщик задач</h1>
+        <h2>Управляй учебой, проектами и личными делами</h2>
+    </header>
+
+    <div class="card-block">
+        <div class="form-row">
+            <div class="form-field">
+                <label>Название задачи</label>
+                <input type="text" id="taskTitle" placeholder="Что нужно сделать?">
+            </div>
+            <div class="form-field">
+                <label>Описание</label>
+                <input type="text" id="taskDesc" placeholder="Подробности">
+            </div>
+            <div class="form-field">
+                <label>Статус</label>
+                <select id="taskStatus">
+                    <option value="todo">Нужно сделать</option>
+                    <option value="inprogress">В процессе</option>
+                    <option value="review">Проверка</option>
+                    <option value="done">Готово</option>
+                </select>
+            </div>
+            <button id="addBtn">+ Добавить</button>
+        </div>
+    </div>
+
+    <div class="card-block">
+        <div class="toolbar">
+            <div class="filters">
+                <button data-filter="all" class="filter-btn active">Все</button>
+                <button data-filter="todo" class="filter-btn">Нужно сделать</button>
+                <button data-filter="inprogress" class="filter-btn">В процессе</button>
+                <button data-filter="review" class="filter-btn">Проверка</button>
+                <button data-filter="done" class="filter-btn">Готово</button>
+                <button id="sortBtn" class="filter-btn">📅 По порядку</button>
+            </div>
+            <div class="counter" id="counter">0 задач</div>
+            <div class="notify" id="notify">✅ Готово</div>
+        </div>
+    </div>
+
+    <div class="board">
+        <div class="column" data-status="todo"><div class="col-header"><span>📌 Нужно сделать</span><span id="todoCount">0</span></div><div class="task-list" id="todoList"></div></div>
+        <div class="column" data-status="inprogress"><div class="col-header"><span>⚙️ В процессе</span><span id="inprogressCount">0</span></div><div class="task-list" id="inprogressList"></div></div>
+        <div class="column" data-status="review"><div class="col-header"><span>🔍 Проверка</span><span id="reviewCount">0</span></div><div class="task-list" id="reviewList"></div></div>
+        <div class="column" data-status="done"><div class="col-header"><span>✅ Готово</span><span id="doneCount">0</span></div><div class="task-list" id="doneList"></div></div>
+    </div>
+    <footer>Перетащи карточку между колонками — статус изменится. Данные сохраняются автоматически.</footer>
+</div>
+
+<script src="q.js"></script>
+</body>
+</html>

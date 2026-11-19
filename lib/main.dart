@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'notes_cubit.dart';
 
 void main() {
-  runApp(const NotesApp());
+  runApp(
+    BlocProvider(
+      create: (_) => NotesCubit(),
+      child: const NotesApp(),
+    ),
+  );
 }
 
 class NotesApp extends StatelessWidget {
@@ -21,12 +28,6 @@ class NotesApp extends StatelessWidget {
   }
 }
 
-class Note {
-  String text;
-
-  Note(this.text);
-}
-
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
 
@@ -36,9 +37,6 @@ class NotesScreen extends StatefulWidget {
 
 class _NotesScreenState extends State<NotesScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Note> _notes = [];
-
-  int _editingIndex = -1;
 
   @override
   void dispose() {
@@ -46,163 +44,187 @@ class _NotesScreenState extends State<NotesScreen> {
     super.dispose();
   }
 
-  void _saveNote() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите текст заметки')),
-      );
-      return;
-    }
-
-    setState(() {
-      if (_editingIndex == -1) {
-        _notes.add(Note(text));
-      } else {
-        _notes[_editingIndex].text = text;
-        _editingIndex = -1;
-      }
-      _controller.clear();
-    });
-  }
-
-  void _deleteNote(int index) {
-    setState(() {
-      _notes.removeAt(index);
-      if (_editingIndex == index) {
-        _editingIndex = -1;
-        _controller.clear();
-      } else if (_editingIndex > index) {
-        _editingIndex--;
-      }
-    });
-  }
-
-  void _editNote(int index) {
-    setState(() {
-      _editingIndex = index;
-      _controller.text = _notes[index].text;
-      _controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _controller.text.length),
-      );
-    });
-  }
-
-  void _cancelEdit() {
-    setState(() {
-      _editingIndex = -1;
-      _controller.clear();
-    });
+  void _showNoteDialog(BuildContext context, String text) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Просмотр заметки'),
+        content: SingleChildScrollView(child: Text(text)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Закрыть'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isEditing = _editingIndex != -1;
+    final cubit = context.read<NotesCubit>();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Редактирование заметки' : 'Мои заметки'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: _controller,
-              maxLines: 4,
-              minLines: 2,
-              decoration: InputDecoration(
-                hintText: 'Введите текст заметки...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.grey.shade100,
-              ),
-            ),
-            const SizedBox(height: 12),
+    return BlocConsumer<NotesCubit, NotesState>(
+      listener: (context, state) {
+        if (state.isEditing) {
+          final text = state.currentEditingText;
+          _controller.text = text;
+          _controller.selection = TextSelection.fromPosition(
+            TextPosition(offset: text.length),
+          );
+        } else {
+          _controller.clear();
+        }
+      },
+      builder: (context, state) {
+        final notes = state.notes;
+        final isEditing = state.isEditing;
 
-            Row(
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(isEditing ? 'Редактирование заметки' : 'Мои заметки'),
+            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _saveNote,
-                    icon: Icon(isEditing ? Icons.check : Icons.save),
-                    label: Text(isEditing ? 'Обновить' : 'Сохранить'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                TextField(
+                  controller: _controller,
+                  maxLines: 4,
+                  minLines: 2,
+                  decoration: InputDecoration(
+                    hintText: 'Введите текст заметки...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    filled: true,
+                    fillColor: Colors.grey.shade100,
                   ),
                 ),
-                if (isEditing) ...[
-                  const SizedBox(width: 8),
-                  OutlinedButton(
-                    onPressed: _cancelEdit,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 16),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final error = cubit.saveNote(_controller.text);
+                          if (error.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error)),
+                            );
+                          }
+                        },
+                        icon: Icon(isEditing ? Icons.check : Icons.save),
+                        label: Text(isEditing ? 'Обновить' : 'Сохранить'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
                     ),
-                    child: const Text('Отмена'),
+                    if (isEditing) ...[
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: cubit.cancelEdit,
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 16),
+                        ),
+                        child: const Text('Отмена'),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: notes.isEmpty
+                      ? const Center(
+                    child: Text(
+                      'Заметок пока нет',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  )
+                      : ListView.builder(
+                    itemCount: notes.length,
+                    itemBuilder: (context, index) {
+                      final note = notes[index];
+                      final isCurrent = state.editingIndex == index;
+
+                      return Dismissible(
+                        key: ValueKey('${index}_${note.text}'),
+                        background: Container(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          color: Colors.green,
+                          child: const Icon(Icons.star_border, color: Colors.white),
+                        ),
+                        secondaryBackground: Container(
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          color: Colors.red,
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        confirmDismiss: (direction) async {
+                          if (direction == DismissDirection.startToEnd) {
+                            cubit.markNormal(index);
+                            return false;
+                          }
+                          return true;
+                        },
+                        onDismissed: (_) => cubit.deleteNote(index),
+
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          color: note.isImportant
+                              ? Colors.amber.shade100
+                              : (isCurrent ? Colors.indigo.shade50 : null),
+
+                          child: GestureDetector(
+                            onTap: () => _showNoteDialog(context, note.text),
+                            onDoubleTap: () => cubit.toggleImportant(index),
+                            onLongPress: () => cubit.editNote(index),
+
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    child: Text('${index + 1}'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  if (note.isImportant)
+                                    const Padding(
+                                      padding: EdgeInsets.only(right: 8),
+                                      child: Icon(Icons.star, color: Colors.amber),
+                                    ),
+                                  Expanded(
+                                    child: Text(
+                                      note.text,
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue),
+                                    onPressed: () => cubit.editNote(index),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => cubit.deleteNote(index),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ],
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-
-            Expanded(
-              child: _notes.isEmpty
-                  ? const Center(
-                child: Text(
-                  'Заметок пока нет',
-                  style: TextStyle(color: Colors.grey, fontSize: 16),
-                ),
-              )
-                  : ListView.builder(
-                itemCount: _notes.length,
-                itemBuilder: (context, index) {
-                  final note = _notes[index];
-                  final isCurrent =
-                      _editingIndex == index;
-
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    color: isCurrent
-                        ? Colors.indigo.shade50
-                        : null,
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        child: Text('${index + 1}'),
-                      ),
-                      title: Text(
-                        note.text,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit,
-                                color: Colors.blue),
-                            tooltip: 'Редактировать',
-                            onPressed: () => _editNote(index),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.red),
-                            tooltip: 'Удалить',
-                            onPressed: () => _deleteNote(index),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
